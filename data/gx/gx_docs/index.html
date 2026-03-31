@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GX Validation Report — PNCP Bronze</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #0b0f1a;
+    --surface:   #111827;
+    --surface2:  #1a2235;
+    --border:    #1f2d45;
+    --green:     #00e5a0;
+    --green-dim: #00a372;
+    --red:       #ff4d6d;
+    --amber:     #ffb347;
+    --blue:      #4facfe;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --font-mono: 'Space Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none; z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: .25;
+    animation: scan 4s linear infinite;
+    pointer-events: none; z-index: 1;
+  }
+  @keyframes scan { from { top: -2px; } to { top: 100vh; } }
+  .wrap { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; padding: 0 24px 60px; }
+
+  header {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--green);
+    background: rgba(0,229,160,.08);
+    border: 1px solid rgba(0,229,160,.2);
+    padding: 4px 12px; border-radius: 2px; width: fit-content;
+    animation: fadein .6s ease;
+  }
+  .badge::before { content: '●'; animation: blink 1.2s step-start infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  h1 {
+    font-family: var(--font-mono);
+    font-size: clamp(22px, 4vw, 34px); font-weight: 700;
+    color: #fff; letter-spacing: -1px;
+    animation: fadein .6s .1s ease both;
+  }
+  h1 span { color: var(--green); }
+  .meta {
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    display: flex; gap: 24px; flex-wrap: wrap;
+    animation: fadein .6s .2s ease both;
+  }
+  @keyframes fadein { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+  .status-banner {
+    margin: 32px 0;
+    display: flex; align-items: center; gap: 20px;
+    background: var(--surface);
+    border: 1px solid;
+    border-left-width: 4px;
+    border-radius: 4px;
+    padding: 20px 28px;
+    animation: fadein .6s .3s ease both;
+  }
+  .status-banner.pass { border-color: var(--green); }
+  .status-banner.fail { border-color: var(--red); }
+  .status-banner.warn { border-color: var(--amber); }
+  .status-icon { font-size: 36px; line-height: 1; }
+  .status-text h2 { font-size: 18px; font-weight: 700; color: #fff; }
+  .status-text p  { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .status-pct {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: clamp(32px, 5vw, 52px); font-weight: 700; line-height: 1;
+  }
+  .status-banner.pass .status-pct { color: var(--green); }
+  .status-banner.fail .status-pct { color: var(--red); }
+  .status-banner.warn .status-pct { color: var(--amber); }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 36px;
+    animation: fadein .6s .35s ease both;
+  }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 22px 20px;
+    position: relative; overflow: hidden;
+    transition: transform .2s, border-color .2s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--green-dim); }
+  .card::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent-color, var(--green));
+  }
+  .card-label {
+    font-size: 11px; font-family: var(--font-mono);
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); margin-bottom: 10px;
+  }
+  .card-value {
+    font-family: var(--font-mono); font-size: 32px; font-weight: 700;
+    color: var(--accent-color, var(--green)); line-height: 1;
+  }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin: 36px 0 16px;
+    font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px; color: var(--muted);
+  }
+  .section-head::after {
+    content: ''; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  .progress-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 4px; padding: 18px 20px; margin-bottom: 28px;
+    animation: fadein .6s .4s ease both;
+  }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted); margin-bottom: 10px;
+    font-family: var(--font-mono);
+  }
+  .progress-track { background: var(--border); border-radius: 2px; height: 8px; overflow: hidden; }
+  .progress-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--green), #00ffc3);
+    box-shadow: 0 0 12px rgba(0,229,160,.4);
+    width: 0; transition: width 1.4s cubic-bezier(.22,.61,.36,1);
+  }
+
+  .suite-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 20px 24px;
+    font-family: var(--font-mono); font-size: 12px;
+    line-height: 2; color: var(--muted);
+    animation: fadein .6s .45s ease both;
+  }
+  .suite-box b { color: var(--text); }
+
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden;
+    animation: fadein .6s .45s ease both;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead { background: var(--surface2); }
+  th {
+    padding: 12px 16px; text-align: left;
+    font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 13px 16px; font-size: 13px;
+    border-bottom: 1px solid rgba(31,45,69,.6); vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .col-name { font-family: var(--font-mono); font-size: 12px; color: var(--blue); }
+  .exp-type { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+    padding: 3px 10px; border-radius: 2px; border: 1px solid;
+  }
+  .chip.pass { color: var(--green); border-color: rgba(0,229,160,.3); background: rgba(0,229,160,.08); }
+  .chip.fail { color: var(--red);   border-color: rgba(255,77,109,.3); background: rgba(255,77,109,.08); }
+  .chip.warn { color: var(--amber); border-color: rgba(255,179,71,.3); background: rgba(255,179,71,.08); }
+  .fail-count { font-family: var(--font-mono); font-size: 12px; color: var(--red); }
+  .fail-count.zero { color: var(--muted); }
+
+  .detail-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px; margin-top: 8px;
+    animation: fadein .6s .5s ease both;
+  }
+  .detail-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 16px 18px; position: relative;
+    transition: border-color .2s;
+  }
+  .detail-card.pass { border-left: 3px solid var(--green); }
+  .detail-card.fail { border-left: 3px solid var(--red); }
+  .detail-card.warn { border-left: 3px solid var(--amber); }
+  .detail-card:hover { border-color: var(--green-dim); }
+  .dc-col { font-family: var(--font-mono); font-size: 12px; color: var(--blue); margin-bottom: 4px; }
+  .dc-exp { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .dc-stats { display: flex; gap: 16px; font-family: var(--font-mono); font-size: 11px; }
+  .dc-stats span { color: var(--muted); }
+  .dc-stats strong { color: var(--text); }
+  .mini-bar { margin-top: 10px; }
+  .mini-track { background: var(--border); border-radius: 1px; height: 4px; }
+  .mini-fill {
+    height: 100%; border-radius: 1px;
+    transition: width 1.6s cubic-bezier(.22,.61,.36,1) .3s;
+  }
+  .mini-fill.pass { background: var(--green); }
+  .mini-fill.fail { background: var(--red); }
+  .mini-fill.warn { background: var(--amber); }
+
+  footer {
+    margin-top: 48px; padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    animation: fadein .6s .6s ease both;
+  }
+  @media (max-width: 600px) {
+    .status-pct { font-size: 28px; }
+    .cards { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="badge">Great Expectations 1.x &nbsp;·&nbsp; Bronze Layer</div>
+    <h1>PNCP <span>Validation</span> Report</h1>
+    <div class="meta">
+      <span>📁 Suite: <b>pncp_bronze_suite</b></span>
+      <span>🗄️ Source: <b>data/raw</b></span>
+      <span>📅 <b>30/03/2026 22:35:50</b></span>
+      <span>👤 Hercules Freitas · PECE USP</span>
+    </div>
+  </header>
+
+  <div class="status-banner warn">
+    <div class="status-icon">⚠️</div>
+    <div class="status-text">
+      <h2>Validação Concluída — PASSOU PARCIALMENTE</h2>
+      <p>2 expectativa(s) com violações — revisar antes da camada Silver.</p>
+    </div>
+    <div class="status-pct">86.67%</div>
+  </div>
+
+  <div class="cards">
+    <div class="card" style="--accent-color:var(--blue)">
+      <div class="card-label">Registros Validados</div>
+      <div class="card-value">518,195</div>
+      <div class="card-sub">linhas no DataFrame</div>
+    </div>
+    <div class="card" style="--accent-color:var(--muted)">
+      <div class="card-label">Expectations Avaliadas</div>
+      <div class="card-value">15</div>
+      <div class="card-sub">regras executadas</div>
+    </div>
+    <div class="card" style="--accent-color:var(--green)">
+      <div class="card-label">Passaram</div>
+      <div class="card-value">13</div>
+      <div class="card-sub">✓ sem violações</div>
+    </div>
+    <div class="card" style="--accent-color:var(--red)">
+      <div class="card-label">Falharam</div>
+      <div class="card-value">2</div>
+      <div class="card-sub">⚠ requerem atenção</div>
+    </div>
+    <div class="card" style="--accent-color:var(--amber)">
+      <div class="card-label">Meses Ingeridos</div>
+      <div class="card-value">3</div>
+      <div class="card-sub">lotes mais recentes</div>
+    </div>
+    <div class="card" style="--accent-color:var(--blue)">
+      <div class="card-label">Colunas Mapeadas</div>
+      <div class="card-value">12</div>
+      <div class="card-sub">campos PNCP</div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>Taxa de Sucesso Global</span>
+      <span>86.67%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" style="width:86.67%"></div>
+    </div>
+  </div>
+
+  <div class="section-head">Suite &amp; Contexto</div>
+  <div class="suite-box">
+    <b>Contexto:</b> ephemeral &nbsp;|&nbsp;
+    <b>Datasource:</b> pncp_datasource (pandas) &nbsp;|&nbsp;
+    <b>Asset:</b> bronze_asset &nbsp;|&nbsp;
+    <b>Batch:</b> batch_total &nbsp;|&nbsp;
+    <b>Suite:</b> pncp_bronze_suite<br>
+    <b>Diretório RAW:</b> data/raw/ &nbsp;|&nbsp;
+    <b>Período:</b> últimos 3 meses de páginas JSON &nbsp;|&nbsp;
+    <b>Flatten:</b> estrutura aninhada → 12 colunas planas
+  </div>
+
+  <div class="section-head">Detalhes por Expectativa</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Coluna</th><th>Expectativa</th>
+          <th>Resultado</th><th>Falhas</th><th>Descrição</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">01</td>
+        <td class="col-name">niFornecedor</td>
+        <td class="exp-type">expect_column_to_exist</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Coluna existe no DataFrame</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">02</td>
+        <td class="col-name">niFornecedor</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">03</td>
+        <td class="col-name">numeroControlePNCP</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">04</td>
+        <td class="col-name">numeroControlePNCP</td>
+        <td class="exp-type">expect_column_values_to_be_unique</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Valores únicos (sem duplicatas)</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">05</td>
+        <td class="col-name">orgaoEntidade_cnpj</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">06</td>
+        <td class="col-name">valorGlobal</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">07</td>
+        <td class="col-name">valorGlobal</td>
+        <td class="exp-type">expect_column_values_to_be_between</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Valores dentro do intervalo esperado</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">08</td>
+        <td class="col-name">valorInicial</td>
+        <td class="exp-type">expect_column_values_to_be_between</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Valores dentro do intervalo esperado</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">09</td>
+        <td class="col-name">dataAssinatura</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">10</td>
+        <td class="col-name">dataAssinatura</td>
+        <td class="exp-type">expect_column_values_to_match_regex</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Formato regex válido</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">11</td>
+        <td class="col-name">dataPublicacaoPncp</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">12</td>
+        <td class="col-name">tipoPessoa</td>
+        <td class="exp-type">expect_column_values_to_be_in_set</td>
+        <td><span class="chip fail">✗ FAIL</span></td>
+        <td><span class="fail-count">1,228</span></td>
+        <td style="color:var(--muted);font-size:12px">Valores dentro do conjunto permitido</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">13</td>
+        <td class="col-name">tipoContrato_nome</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">14</td>
+        <td class="col-name">categoriaProcesso_nome</td>
+        <td class="exp-type">expect_column_values_to_not_be_null</td>
+        <td><span class="chip pass">✓ PASS</span></td>
+        <td><span class="fail-count zero">0</span></td>
+        <td style="color:var(--muted);font-size:12px">Sem valores nulos</td>
+      </tr>
+      <tr>
+        <td style="color:var(--muted);font-family:var(--font-mono);font-size:11px">15</td>
+        <td class="col-name">anoContrato</td>
+        <td class="exp-type">expect_column_values_to_be_between</td>
+        <td><span class="chip warn">✗ FAIL</span></td>
+        <td><span class="fail-count">8</span></td>
+        <td style="color:var(--muted);font-size:12px">Valores dentro do intervalo esperado</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-head">Visão por Coluna</div>
+  <div class="detail-grid">
+    
+      <div class="detail-card pass">
+        <div class="dc-col">niFornecedor</div>
+        <div class="dc-exp">2 expectativas avaliadas</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">2</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">numeroControlePNCP</div>
+        <div class="dc-exp">2 expectativas avaliadas</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">2</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">orgaoEntidade_cnpj</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">1</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">valorGlobal</div>
+        <div class="dc-exp">2 expectativas avaliadas</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">2</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">valorInicial</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">1</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">dataAssinatura</div>
+        <div class="dc-exp">2 expectativas avaliadas</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">2</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">dataPublicacaoPncp</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">1</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card fail">
+        <div class="dc-col">tipoPessoa</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">0</strong></span>
+          <span>Falhou: <strong style="color:var(--red)">1</strong></span>
+          <span>Violações: <strong style="color:var(--amber)">1,228</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill fail" style="width:99.8%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">tipoContrato_nome</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">1</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card pass">
+        <div class="dc-col">categoriaProcesso_nome</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">1</strong></span>
+          <span>Falhou: <strong style="color:var(--muted)">0</strong></span>
+          <span>Violações: <strong style="color:var(--muted)">0</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill pass" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-card warn">
+        <div class="dc-col">anoContrato</div>
+        <div class="dc-exp">1 expectativa avaliada</div>
+        <div class="dc-stats">
+          <span>Passou: <strong style="color:var(--green)">0</strong></span>
+          <span>Falhou: <strong style="color:var(--red)">1</strong></span>
+          <span>Violações: <strong style="color:var(--amber)">8</strong></span>
+        </div>
+        <div class="mini-bar">
+          <div class="mini-track">
+            <div class="mini-fill warn" style="width:100.0%"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <footer>
+    <span>Lab01_PART2_5479786 — PNCP Bronze · Escola Politécnica USP · PECE Big Data</span>
+    <span>Prof. Dr. Pedro L. P. Corrêa &amp; Profa. Dra. Jeaneth Machicao · Março/2026</span>
+  </footer>
+</div>
+</body>
+</html>

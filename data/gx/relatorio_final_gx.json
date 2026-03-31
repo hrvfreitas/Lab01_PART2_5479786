@@ -1,0 +1,103 @@
+{
+    "projeto": "Lab01_PART2_5479786 — PNCP Bronze",
+    "executor": "Hercules Freitas - PECE USP",
+    "timestamp": "2026-03-30T22:35:50.228189",
+    "estatisticas": {
+        "total_registros_validados": 518195,
+        "expectativas_avaliadas": 15,
+        "expectativas_sucesso": 13,
+        "porcentagem_sucesso": 86.67
+    },
+    "detalhes_por_coluna": [
+        {
+            "expectativa": "expect_column_to_exist",
+            "coluna": "niFornecedor",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "niFornecedor",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "numeroControlePNCP",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_be_unique",
+            "coluna": "numeroControlePNCP",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "orgaoEntidade_cnpj",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "valorGlobal",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_be_between",
+            "coluna": "valorGlobal",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_be_between",
+            "coluna": "valorInicial",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "dataAssinatura",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_match_regex",
+            "coluna": "dataAssinatura",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "dataPublicacaoPncp",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_be_in_set",
+            "coluna": "tipoPessoa",
+            "sucesso": false,
+            "falhas_encontradas": 1228
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "tipoContrato_nome",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_not_be_null",
+            "coluna": "categoriaProcesso_nome",
+            "sucesso": true,
+            "falhas_encontradas": 0
+        },
+        {
+            "expectativa": "expect_column_values_to_be_between",
+            "coluna": "anoContrato",
+            "sucesso": false,
+            "falhas_encontradas": 8
+        }
+    ]
+}

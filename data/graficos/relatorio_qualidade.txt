@@ -1,0 +1,142 @@
+=================================================================
+  RELATÓRIO DE QUALIDADE — CAMADA SILVER
+  Lab01_PART1_3734509 — PNCP Contratos Públicos
+=================================================================
+
+  Período (filtrado)  : 2021-04 a 8406-05
+  Total bruto         : 3,723,474 registros
+  Após filtro sanidade: 3,650,860 registros
+  Descartados         : 72,614 (1.95%)
+  Arquivos Parquet    : 55
+
+  TIPOS DE COLUNAS
+  -------------------------------------------------------
+  id                                      : str
+  orgao_entidade_id                       : str
+  orgao_entidade_nome                     : str
+  objeto_contrato                         : str
+  numero_contrato                         : str
+  processo                                : str
+  categoria_processo_id                   : int64
+  categoria_processo_nome                 : str
+  cnpj_contratada                         : str
+  nome_contratada                         : str
+  valor_inicial                           : float64
+  valor_global                            : float64
+  valor_parcelas                          : float64
+  data_assinatura                         : datetime64[ms]
+  data_vigencia_inicio                    : datetime64[ms]
+  data_vigencia_fim                       : datetime64[ms]
+  situacao_contrato_id                    : int64
+  situacao_contrato_nome                  : str
+  data_publicacao                         : datetime64[ms]
+  ni_fornecedor                           : str
+  nome_razao_social_fornecedor            : str
+  codigo_unidade                          : str
+  nome_unidade                            : str
+  modalidade_id                           : int64
+  modalidade_nome                         : str
+  ano_mes_coleta                          : str
+  data_coleta                             : datetime64[ms]
+
+  CONTAGEM DE NULOS — dado bruto, antes de filtros (%)
+  -------------------------------------------------------
+  situacao_contrato_nome                  : 100.0000% ⚠
+  cnpj_contratada                         :  4.0954%  
+  processo                                :  0.4629%  
+  nome_razao_social_fornecedor            :  0.0231%  
+  nome_contratada                         :  0.0231%  
+  ni_fornecedor                           :  0.0001%  
+  orgao_entidade_nome                     :  0.0000%  
+  categoria_processo_id                   :  0.0000%  
+  orgao_entidade_id                       :  0.0000%  
+  id                                      :  0.0000%  
+  objeto_contrato                         :  0.0000%  
+  valor_inicial                           :  0.0000%  
+  categoria_processo_nome                 :  0.0000%  
+  numero_contrato                         :  0.0000%  
+  valor_global                            :  0.0000%  
+  data_vigencia_inicio                    :  0.0000%  
+  data_vigencia_fim                       :  0.0000%  
+  data_assinatura                         :  0.0000%  
+  valor_parcelas                          :  0.0000%  
+  data_publicacao                         :  0.0000%  
+  situacao_contrato_id                    :  0.0000%  
+  codigo_unidade                          :  0.0000%  
+  nome_unidade                            :  0.0000%  
+  modalidade_id                           :  0.0000%  
+  modalidade_nome                         :  0.0000%  
+  ano_mes_coleta                          :  0.0000%  
+  data_coleta                             :  0.0000%  
+
+  ZEROS SENTINELA — preenchimento padrão do pipeline (%)
+  -------------------------------------------------------
+  Coluna                                       Zeros       (%)
+  ----------------------------------------  --------  --------
+  valor_inicial                               53,580     1.44%
+    → float — zero indica ausência (não é valor real)
+  valor_parcelas                            1,214,780    32.62%
+    → float — zero indica ausência (não é valor real)
+  situacao_contrato_id                      3,723,474   100.00% ⚠
+    → int   — 0 = sentinela, campo não existe na API
+  modalidade_id                                    0     0.00%
+    → int   — 0 = sentinela quando API não retornou
+
+  ESTATÍSTICAS DESCRITIVAS — valor_global (dado filtrado)
+  -------------------------------------------------------
+  N válidos                     :              3,650,860
+  Total (R$ bilhões)            :              1807.8891
+  Média (R$)                    :           495,195.4046
+  Mediana (R$)                  :             3,296.0000
+  Desvio Padrão (R$)            :        26,357,303.5934
+  Mínimo (R$)                   :                 1.0000
+  Máximo (R$)                   :    10,000,000,000.0000
+  P01 (R$)                      :                35.0000
+  P05 (R$)                      :               110.1600
+  P25 (R$)                      :               601.7000
+  P75 (R$)                      :            23,140.0000
+  P95 (R$)                      :           414,470.9230
+  P99 (R$)                      :         3,761,043.7788
+
+  CONTRATOS POR ANO (dado filtrado)
+  -------------------------------------------------------
+  Ano        Contratos     Valor (R$ bi)        Médio (R$)    Mediana (R$)
+  ------  ------------  ----------------  ----------------  --------------
+  2021           5,869            0.4243       72,287.8672      3,350.5000
+  2022          43,418            7.6352      175,854.1491      3,239.6450
+  2023         271,822           92.8453      341,566.5909      2,204.4750
+  2024       1,181,492          629.4481      532,756.9810      3,315.0000
+  2025       1,805,416          917.3335      508,100.8980      3,490.0000
+  2026         342,833          160.2023      467,289.7183      3,576.6330
+  2027               7            0.0000        4,687.0857      1,900.8000
+  2030               1            0.0001      144,831.8600    144,831.8600
+  2102               1            0.0000        4,560.0000      4,560.0000
+  8406               1            0.0002      167,784.0000    167,784.0000
+
+  TOP 10 MODALIDADES
+  -------------------------------------------------------
+  Modalidade                                 Contratos   Valor (R$ bi)
+  ----------------------------------------  ----------  --------------
+  Empenho                                    1,369,005         52.3626
+  Contrato (termo inicial)                   1,259,703       1659.4589
+  Outros                                     1,004,249         56.3877
+  Carta Contrato                                 8,742         14.4511
+  Termo de Adesão                                5,597          9.8147
+  Comodato                                       1,963          0.6488
+  Concessão                                        854         14.1331
+  Arrendamento                                     372          0.5509
+  Convênio                                         346          0.0760
+  Termo de Compromisso                              25          0.0051
+
+  PROBLEMAS ENCONTRADOS
+  -------------------------------------------------------
+  [CRÍTICO] situacao_contrato_nome: 100.0000%
+  [BAIXO] cnpj_contratada: 4.0954%
+  [BAIXO] processo: 0.4629%
+  [BAIXO] nome_contratada: 0.0231%
+  [BAIXO] nome_razao_social_fornecedor: 0.0231%
+  [BAIXO] data_assinatura (fora de 2021-2026): 0.0003%
+  [BAIXO] ni_fornecedor: 0.0001%
+
+  Gerado em: 21/03/2026 21:11
+=================================================================
