@@ -406,6 +406,25 @@ pncp_metabase     Up              0.0.0.0:3000->3000/tcp
 python gx_validacao.py
 
 ```
+### 📊 Dashboard — Metabase
+
+#### Evolução de contratos
+![Evolução](img/evolucao.png)
+
+#### Top órgãos
+![Top órgãos](img/top_orgaos.png)
+
+#### Pareto fornecedores
+![Pareto](img/pareto.png)
+
+#### Sazonalidade
+![Sazonalidade](img/sazonalidade.png)
+
+#### Ticket médio
+![Ticket](img/ticket.png)
+
+#### Ticket médio
+![Ticket](img/ticket.png)
 
 ---
 
