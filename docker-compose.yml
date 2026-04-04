@@ -1,12 +1,12 @@
 services:
 
   # ===========================================================================
-  # FASTAPI — ETL + API REST
-  # Orquestra o pipeline bronze/silver/gold e expõe as queries via REST.
+  # FASTAPI — Controller (ETL + API REST)
+  # Build do Dockerfile em ./api/
   # ===========================================================================
   api:
     build:
-      context: ./api
+      context: ./api          # pasta que contém Dockerfile + requirements.txt + main.py
       dockerfile: Dockerfile
     container_name: pncp_api
     restart: unless-stopped
@@ -19,8 +19,7 @@ services:
       DATABASE_URL:      "postgresql://postgres:postgres@pncp_postgres:5432/pncp_db"
       CACHE_TTL_SECONDS: "300"
     volumes:
-      # Monta os dados e scripts do pipeline dentro do container
-      - ./data:/app/data
+      - ./data:/app/data        # monta data/ do host dentro do container
       - ./logs:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -31,7 +30,7 @@ services:
       - pncp_net
 
   # ===========================================================================
-  # POSTGRESQL — Model (única fonte de verdade)
+  # POSTGRESQL — Model
   # ===========================================================================
   postgres:
     image: postgres:16-alpine
@@ -68,49 +67,42 @@ services:
       - pncp_net
 
   # ===========================================================================
-  # SUPERSET — View (dashboards conectados diretamente ao PostgreSQL)
+  # METABASE — View (dashboards — conecta direto no PostgreSQL)
   # ===========================================================================
-  superset:
-    image: apache/superset:latest
-    container_name: pncp_superset
+  metabase:
+    image: metabase/metabase:latest
+    container_name: pncp_metabase
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "8088:8088"
+      - "3000:3000"
     environment:
-      SUPERSET_SECRET_KEY:     "pncp_lab_secret_5479786_change_me"
-      SQLALCHEMY_DATABASE_URI: "postgresql://postgres:postgres@pncp_postgres:5432/superset_meta"
-      SUPERSET_LOAD_EXAMPLES:  "false"
-      PYTHONPATH:              "/app/pythonpath"
+      # Banco de metadados do próprio Metabase (usa o mesmo postgres)
+      MB_DB_TYPE:     postgres
+      MB_DB_DBNAME:   metabase_meta
+      MB_DB_PORT:     5432
+      MB_DB_USER:     postgres
+      MB_DB_PASS:     postgres
+      MB_DB_HOST:     pncp_postgres
+      # Fuso horário
+      JAVA_TIMEZONE:  America/Sao_Paulo
     volumes:
-      - superset_home:/app/superset_home
-      - ./superset_config.py:/app/pythonpath/superset_config.py:ro
-    command: >
-      bash -c "
-        superset db upgrade &&
-        superset fab create-admin
-          --username admin
-          --firstname Admin
-          --lastname PNCP
-          --email admin@pncp.lab
-          --password admin123 2>/dev/null || true &&
-        superset init &&
-        superset run -h 0.0.0.0 -p 8088 --with-threads
-      "
+      - metabase_data:/metabase-data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 15s
       retries: 10
-      start_period: 90s
+      start_period: 120s
     networks:
       - pncp_net
 
+# =============================================================================
 volumes:
   pncp_data:
-  superset_home:
+  metabase_data:
 
 networks:
   pncp_net:

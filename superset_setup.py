@@ -14,7 +14,7 @@ import time
 
 import requests
 
-SUPERSET_URL = 'http://localhost:8088'
+SUPERSET_URL = 'http://127.0.0.1:8088'
 ADMIN_USER   = 'admin'
 ADMIN_PASS   = 'admin123'
 
@@ -64,7 +64,7 @@ def _aguardar_superset(max_tentativas: int = 20) -> None:
     print('⏳ Aguardando Superset inicializar', end='', flush=True)
     for _ in range(max_tentativas):
         try:
-            r = requests.get(f'{SUPERSET_URL}/health', timeout=5)
+            r = requests.get(f'{SUPERSET_URL}/health', timeout=50)
             if r.status_code == 200:
                 print(' ✓')
                 return

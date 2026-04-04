@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Qualidade — PNCP Bronze</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: 
+#f8fafc; color: 
+#1e293b; padding: 40px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-top: 5px solid 
+#1e3a8a; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        header { border-bottom: 1px solid 
+#e2e8f0; padding-bottom: 20px; margin-bottom: 30px; }
+        .status-pass { color: 
+#16a34a; font-weight: bold; }
+        .status-fail { color: 
+#dc2626; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: 
+#f1f5f9; text-align: left; padding: 12px; border-bottom: 2px solid 
+#e2e8f0; font-size: 0.85rem; text-transform: uppercase; }
+        td { padding: 12px; border-bottom: 1px solid 
+#f1f5f9; font-size: 0.95rem; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; }
+        .badge-pass { background: 
+#dcfce7; color: 
+#166534; }
+        .badge-fail { background: 
+#fee2e2; color: 
+#991b1b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Relatório de Validação PNCP</h1>
+            <p>Executado em: {{ timestamp }} | Responsável: {{ executor }}</p>
+            <h3>Status Geral: 
+                <span class="{{ 'status-pass' if sucesso_global else 'status-fail' }}">
+                    {{ "APROVADO" if sucesso_global else "FALHOU" }} ({{ taxa_sucesso }}%)
+                </span>
+            </h3>
+        </header>
+        <table>
+            <thead>
+                <tr>
+                    <th>Coluna</th>
+                    <th>Expectativa</th>
+                    <th>Resultado</th>
+                    <th>Falhas</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in detalhes %}
+                <tr>
+                    <td><code>{{ item.coluna }}</code></td>
+                    <td>{{ item.exp }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-pass' if item.sucesso else 'badge-fail' }}">
+                            {{ "PASS" if item.sucesso else "FAIL" }}
+                        </span>
+                    </td>
+                    <td>{{ "{:,}".format(item.falhas) if item.falhas > 0 else 0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>    e ai criando o from jinja2 import Template, Environment, FileSystemLoader
+import os
+# ... (toda a sua lógica de validação do Great Expectations continua igual) ...
+# 1. Preparar os dados para o Jinja (o dicionário que o template vai ler)
+data_to_render = {
+    "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+    "executor": "Hercules Freitas - PECE USP",
+    "sucesso_global": validation_result.success,
+    "taxa_sucesso": round(pct, 2),
+    "detalhes": detalhes # Aquela sua lista de dicionários
+}

@@ -1,0 +1,184 @@
+import json
+import logging
+import sys
+import warnings
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+import great_expectations as gx
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultJinjaPageView
+
+# ----------------------------------------------------------
+# CONFIGURAÇÕES DE AMBIENTE
+# ----------------------------------------------------------
+warnings.filterwarnings('ignore')
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s [%(levelname)s] %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Caminhos baseados na estrutura do seu repo no Tirinto
+RAW_DIR = Path('data/raw')
+GX_OUTPUT = Path('data/gx/reports')
+GX_OUTPUT.mkdir(parents=True, exist_ok=True)
+
+def print_header():
+    print(f"\n{'='*80}")
+    print(f" UNIFIED QUALITY PIPELINE — PNCP BRONZE LAYER")
+    print(f" Lab01_PART2_5479786 | Engine: GX {gx.__version__}")
+    print(f"{'='*80}\n")
+
+# ----------------------------------------------------------
+# PASSO 1: EXTRAÇÃO E TRATAMENTO (FLATTENING)
+# ----------------------------------------------------------
+def get_bronze_dataframe(limit_months=3):
+    """
+    Lê os JSONs da camada Bronze e achata a estrutura.
+    limit_months=None lê TODO o volume (3.7M+ linhas).
+    """
+    logger.info(f"Iniciando leitura da Bronze (Filtro: últimos {limit_months or 'Todos'} meses)...")
+    
+    dirs_mes = sorted(RAW_DIR.glob('????_??'))
+    if not dirs_mes:
+        logger.error(f"Erro: Pasta {RAW_DIR} não encontrada ou vazia.")
+        sys.exit(1)
+
+    # Seleciona a amostra ou o total
+    dirs_selecionados = dirs_mes[-limit_months:] if limit_months else dirs_mes
+    registros_brutos = []
+
+    for d in dirs_selecionados:
+        for arq in sorted(d.glob('pagina_*.json')):
+            try:
+                with open(arq, encoding='utf-8') as f:
+                    dados = json.load(f)
+                    if isinstance(dados, list):
+                        registros_brutos.extend(dados)
+            except Exception as e:
+                logger.warning(f"Falha ao processar {arq.name}: {e}")
+
+    if not registros_brutos:
+        logger.error("Nenhum dado extraído dos JSONs.")
+        sys.exit(1)
+
+    logger.info(f"Processando flattening de {len(registros_brutos):,} registros...")
+
+    def _flatten(r: dict) -> dict:
+        orgao = r.get('orgaoEntidade') or {}
+        unidade = r.get('unidadeOrgao') or {}
+        return {
+            'numeroControlePNCP': r.get('numeroControlePNCP') or r.get('numeroControlePncpCompra'),
+            'orgaoEntidade_cnpj': orgao.get('cnpj'),
+            'orgaoEntidade_razaoSocial': orgao.get('razaoSocial'),
+            'unidadeOrgao_ufSigla': unidade.get('ufSigla'),
+            'valorGlobal': r.get('valorGlobal'),
+            'dataAssinatura': r.get('dataAssinatura'),
+            'tipoPessoa': r.get('tipoPessoa'),
+            'esferaId': orgao.get('esferaId'),
+            'anoContrato': r.get('anoContrato')
+        }
+
+    df = pd.DataFrame([_flatten(r) for r in registros_brutos])
+    logger.info(f"DataFrame Final: {df.shape[0]:,} linhas x {df.shape[1]} colunas.")
+    return df
+
+# ----------------------------------------------------------
+# PASSO 2: MOTOR DE VALIDAÇÃO (GX 1.X)
+# ----------------------------------------------------------
+def run_quality_check(df):
+    """Configura o GX, aplica expectativas e gera HTML."""
+    logger.info("Configurando DataContext efêmero (GX 1.x)...")
+    
+    context = gx.get_context(mode='ephemeral')
+    
+    # Nomes para o BatchRequest (v1.x exige esses metadados)
+    ds_name = "pncp_ds"
+    as_name = "bronze_asset"
+    st_name = "pncp_suite"
+
+    # Criando Datasource e Asset
+    datasource = context.data_sources.add_pandas(name=ds_name)
+    asset = datasource.add_dataframe_asset(name=as_name)
+    
+    # Criando a Suite
+    context.suites.add(gx.ExpectationSuite(name=st_name))
+
+    # Obtendo o Validator via BatchRequest explícito (resolve o TypeError)
+    validator = context.get_validator(
+        batch_request=asset.build_batch_request(options={"dataframe": df}),
+        expectation_suite_name=st_name
+    )
+
+    # --- EXPECTATIVAS ---
+    logger.info("Definindo 5 expectativas de qualidade...")
+    
+    # 1. Not Null em PK
+    validator.expect_column_values_to_not_be_null("numeroControlePNCP")
+    
+    # 2. RegEx de CNPJ (14 dígitos) - mostly=0.95 pois a Raw aceita lixo
+    validator.expect_column_values_to_match_regex(
+        "orgaoEntidade_cnpj", regex=r"^\d{14}$", mostly=0.95
+    )
+    
+    # 3. Range de Valores (Proteção contra erros de digitação na API)
+    validator.expect_column_values_to_be_between(
+        "valorGlobal", min_value=0, max_value=2e10, mostly=0.99
+    )
+    
+    # 4. Domínio de Pessoa
+    validator.expect_column_values_to_be_in_set("tipoPessoa", ["PJ", "PF"])
+    
+    # 5. Range Temporal (PNCP começou em 2021, mas aceita retroativos)
+    validator.expect_column_values_to_be_between("anoContrato", min_value=2020, max_value=2026)
+
+    # Execução
+    result = validator.validate()
+
+    # --- RENDERIZAÇÃO HTML ---
+    logger.info("Gerando Data Docs HTML...")
+    renderer = ValidationResultsPageRenderer()
+    rendered_content = renderer.render(result)
+    html_content = DefaultJinjaPageView().render(rendered_content)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    report_path = GX_OUTPUT / f"docs_bronze_{timestamp}.html"
+    
+    with open(report_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+        
+    return result, report_path
+
+# ----------------------------------------------------------
+# MAIN EXECUTION
+# ----------------------------------------------------------
+def main():
+    print_header()
+    
+    try:
+        # 1. Extração (Mantenha limit_months=3 para testar rápido)
+        # Se quiser os 3.7M de linhas, use limit_months=None
+        df_bronze = get_bronze_dataframe(limit_months=66)
+        
+        # 2. Qualidade
+        val_result, html_path = run_quality_check(df_bronze)
+        
+        # 3. Sumário de Fechamento
+        status = "✅ PASSOU" if val_result.success else "❌ FALHOU"
+        pct = val_result.statistics.get('success_percent', 0)
+        
+        print(f"\n{'-'*80}")
+        print(f" RELATÓRIO FINAL")
+        print(f" Status Quality: {status}")
+        print(f" Taxa de Sucesso: {pct:.2f}%")
+        print(f" Caminho HTML:   {html_path.resolve()}")
+        print(f"{'-'*80}\n")
+
+    except Exception as e:
+        logger.error(f"Falha crítica no pipeline: {e}", exc_info=True)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
