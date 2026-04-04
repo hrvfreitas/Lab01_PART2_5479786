@@ -118,7 +118,7 @@ Lab01_PART2_5479786/
 
 ---
 
-##4. Qualidade de Dados — Great Expectations
+## 4. Qualidade de Dados — Great Expectations
 Objetivo
 
 Implementar validação e observabilidade na camada Bronze (Raw), garantindo a detecção de inconsistências diretamente na fonte da API PNCP antes de qualquer transformação.
@@ -210,7 +210,7 @@ A API PNCP retorna categorias adicionais não documentadas
 Impacto:
 ```
 Baixo — campo categórico informativo
-anoContrato — 12 violações (~0,0023%)
+anoContrato — 5 violações (~0,0023%)
 
 Valores fora do intervalo esperado.
 
