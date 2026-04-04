@@ -406,6 +406,11 @@ pncp_metabase     Up              0.0.0.0:3000->3000/tcp
 python gx_validacao.py
 
 ```
+### 📊 Config — Metabase
+
+
+![Config](data/screenshot/config-metabase.png)
+
 ### 📊 Dashboard — Metabase
 
 #### Evolução de contratos
