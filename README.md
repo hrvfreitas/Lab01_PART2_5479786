@@ -118,106 +118,131 @@ Lab01_PART2_5479786/
 
 ---
 
-## 4. Qualidade de Dados — Great Expectations
+##4. Qualidade de Dados — Great Expectations
+Objetivo
 
-### Objetivo
+Implementar validação e observabilidade na camada Bronze (Raw), garantindo a detecção de inconsistências diretamente na fonte da API PNCP antes de qualquer transformação.
+```
+Configuração
+Parâmetro	Valor
+Contexto	ephemeral (Great Expectations 1.x)
+Datasource	pncp_ds (pandas in-memory)
+Asset	bronze_asset
+Suite	pncp_suite
+Origem dos dados	JSONs em data/raw/
+Flatten	Estrutura aninhada → 9 colunas principais
+Estratégia de validação
+```
+Diferente de abordagens tradicionais com múltiplas regras, este pipeline utiliza 5 expectativas essenciais, focadas em:
+```
+Integridade mínima (PK não nula)
+Validação estrutural (CNPJ)
+Sanidade financeira
+Domínio categórico
+Consistência temporal
+```
+Essa abordagem reduz custo computacional e mantém alta efetividade na detecção de erros reais da API.
+```
+Expectations implementadas
+#	Coluna	Expectation	Categoria
+01	numeroControlePNCP	expect_column_values_to_not_be_null	Integridade
+02	orgaoEntidade_cnpj	expect_column_values_to_match_regex	Estrutura
+03	valorGlobal	expect_column_values_to_be_between	Validade financeira
+04	tipoPessoa	expect_column_values_to_be_in_set	Domínio
+05	anoContrato	expect_column_values_to_be_between	Validade temporal
+Regras importantes
+CNPJ (orgaoEntidade_cnpj)
+Regex: ^\d{14}$
+Tolerância: mostly=95%
+Justificativa: Bronze aceita dados imperfeitos da API
+Valor (valorGlobal)
+Intervalo: 0 até 20 bilhões
+Tolerância: mostly=99%
+Protege contra erros absurdos (ex: valores inflados por bug)
+Ano (anoContrato)
+Intervalo: 2020–2026
+```
+Considera contratos retroativos
+Por que validar na Bronze?
 
-Implementar observabilidade e validação na **camada Bronze (Raw)**, validando os dados **exatamente como chegam da API PNCP** — antes de qualquer transformação ou normalização.
+A validação ocorre antes de qualquer tratamento para garantir:
 
-### Configuração
-
-| Parâmetro | Valor |
-|---|---|
-| **Contexto** | `ephemeral` + datasource `pandas` (filesystem) |
-| **Datasource** | `pncp_datasource` — lê JSONs de `data/raw/` |
-| **Asset** | `bronze_asset` — amostra dos 3 meses mais recentes |
-| **Suite** | `pncp_bronze_suite` |
-| **Flatten** | Estrutura aninhada da API → 12 colunas planas (nomes originais) |
-
-### Por que validar na Bronze?
-
-A Bronze armazena os dados **as-is** da API PNCP. Validar aqui permite detectar problemas na **fonte** (antes de qualquer transformação), garantindo que erros de digitação, campos ausentes ou formatos inesperados sejam documentados e rastreados independentemente do pipeline de tratamento.
-
-### 15 Expectations implementadas
-
-| # | Coluna | Tipo de Expectation | Categoria |
-|---|---|---|---|
-| 01 | `niFornecedor` | `expect_column_to_exist` | Estrutura |
-| 02 | `niFornecedor` | `expect_column_values_to_not_be_null` | Completude |
-| 03 | `numeroControlePNCP` | `expect_column_values_to_not_be_null` | Completude |
-| 04 | `numeroControlePNCP` | `expect_column_values_to_be_unique` | Unicidade |
-| 05 | `orgaoEntidade_cnpj` | `expect_column_values_to_not_be_null` | Completude |
-| 06 | `valorGlobal` | `expect_column_values_to_not_be_null` | Completude |
-| 07 | `valorGlobal` | `expect_column_values_to_be_between` | Validade financeira |
-| 08 | `valorInicial` | `expect_column_values_to_be_between` | Validade financeira |
-| 09 | `dataAssinatura` | `expect_column_values_to_not_be_null` | Completude |
-| 10 | `dataAssinatura` | `expect_column_values_to_match_regex` | Formato de data |
-| 11 | `dataPublicacaoPncp` | `expect_column_values_to_not_be_null` | Completude |
-| 12 | `tipoPessoa` | `expect_column_values_to_be_in_set` | Domínio |
-| 13 | `tipoContrato_nome` | `expect_column_values_to_not_be_null` | Completude |
-| 14 | `categoriaProcesso_nome` | `expect_column_values_to_not_be_null` | Completude |
-| 15 | `anoContrato` | `expect_column_values_to_be_between` | Validade temporal |
-
-**Tipos distintos utilizados (≥ 5 exigidos):**
-`expect_column_to_exist` · `expect_column_values_to_not_be_null` · `expect_column_values_to_be_unique` · `expect_column_values_to_be_between` · `expect_column_values_to_match_regex` · `expect_column_values_to_be_in_set`
-
----
-
+Rastreabilidade dos erros da fonte
+Independência do pipeline Silver/Gold
+Transparência na qualidade dos dados brutos
+ 
 ## 5. Resultados da Validação
 
-**Execução:** 30/03/2026 às 22:35:50 · Amostra: 3 meses mais recentes
-
-### Resumo
-
-| Métrica | Valor |
-|---|---|
-| **Status** | ⚠️ PASSOU PARCIALMENTE |
-| **Taxa de sucesso** | **86,67%** |
-| Registros validados | 518.195 linhas |
-| Expectations avaliadas | 15 |
-| ✅ Passaram | **13** |
-| ❌ Falharam | **2** |
-| Meses ingeridos | 3 (lotes mais recentes) |
-| Colunas mapeadas | 12 campos PNCP |
-
-### Detalhes por expectation
-
-| # | Coluna | Expectation | Resultado | Falhas |
-|---|---|---|---|---|
-| 01 | `niFornecedor` | `expect_column_to_exist` | ✅ PASS | 0 |
-| 02 | `niFornecedor` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 03 | `numeroControlePNCP` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 04 | `numeroControlePNCP` | `expect_column_values_to_be_unique` | ✅ PASS | 0 |
-| 05 | `orgaoEntidade_cnpj` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 06 | `valorGlobal` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 07 | `valorGlobal` | `expect_column_values_to_be_between` | ✅ PASS | 0 |
-| 08 | `valorInicial` | `expect_column_values_to_be_between` | ✅ PASS | 0 |
-| 09 | `dataAssinatura` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 10 | `dataAssinatura` | `expect_column_values_to_match_regex` | ✅ PASS | 0 |
-| 11 | `dataPublicacaoPncp` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| **12** | **`tipoPessoa`** | **`expect_column_values_to_be_in_set`** | **❌ FAIL** | **1.228** |
-| 13 | `tipoContrato_nome` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| 14 | `categoriaProcesso_nome` | `expect_column_values_to_not_be_null` | ✅ PASS | 0 |
-| **15** | **`anoContrato`** | **`expect_column_values_to_be_between`** | **❌ FAIL** | **8** |
-
-### Análise das falhas
-
-**`tipoPessoa` — 1.228 violações**
-
-O conjunto esperado era `{PJ, PF}`. Os 1.228 registros falhando indicam que a API PNCP retorna valores adicionais nesse campo (possivelmente `null` ou outras categorias não documentadas) em contratos específicos. Impacto: baixo — a coluna é informativa e não bloqueia o processamento.
-
-**`anoContrato` — 8 violações**
-
-8 registros com ano fora do intervalo 2000–2099 — consistente com os erros de digitação na fonte já identificados no Lab 1 (ex: `anoContrato = 2102`). Esses registros são removidos pelo filtro de sanidade no `silver.py`.
-
-### Data Docs
-
-O relatório completo de validação está disponível em:
-
+Execução: 03/04/2026 às 23:11:01
+Volume: 518.195 registros
+Fonte: camada Bronze (dados brutos da API PNCP)
 ```
-data/gx/gx_docs/index.html
+Resumo
+Métrica	Valor
+Status	FALHOU
+Taxa de sucesso	60%
+Registros validados	518.195 linhas
+Expectations avaliadas	5
+ Passaram	3
+ Falharam	2
+Detalhes por expectation
+#	Coluna	Expectation	Resultado
+01	numeroControlePNCP	not null	✅ PASS
+02	orgaoEntidade_cnpj	regex CNPJ	✅ PASS
+03	valorGlobal	range válido	✅ PASS
+04	tipoPessoa	domínio {PJ, PF}	❌ FAIL
+05	anoContrato	range 2020–2026	❌ FAIL
 ```
+Análise das falhas
+```
+tipoPessoa — 1.228 violações (~0,237%)
 
+Valores fora do domínio esperado {PJ, PF}.
+```
+Exemplo identificado:
+```
+"PE"
+```
+Causa provável:
+```
+A API PNCP retorna categorias adicionais não documentadas
+```
+Impacto:
+```
+Baixo — campo categórico informativo
+anoContrato — 12 violações (~0,0023%)
+
+Valores fora do intervalo esperado.
+
+Exemplos reais encontrados:
+
+24062025
+20255
+15012026
+2702
+```
+Causa provável:
+
+Erro de digitação ou campo contaminado com datas completas
+
+Impacto:
+
+Muito baixo — volume insignificante
+Interpretação geral
+
+Apesar do status global ser FAIL, isso não representa problema crítico:
+```
+✔️ 99,7%+ dos dados estão corretos
+✔️ Falhas são pontuais e esperadas em dados governamentais
+✔️ Pipeline Silver já trata essas inconsistências
+```
+Data Docs
+
+O relatório completo gerado automaticamente pelo Great Expectations está disponível em:
+
+data/gx/reports/report_pncp_20260403_201101.html
+```
+#
 ---
 
 ## 6. API Controller — FastAPI
