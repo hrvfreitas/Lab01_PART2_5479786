@@ -409,22 +409,20 @@ python gx_validacao.py
 ### 📊 Dashboard — Metabase
 
 #### Evolução de contratos
-![Evolução](img/evolucao.png)
+![Evolução](data/screenshot/evolucao.png)
 
 #### Top órgãos
-![Top órgãos](img/top_orgaos.png)
+![Top órgãos](data/screenshot/top_orgaos.png)
 
 #### Pareto fornecedores
-![Pareto](img/pareto.png)
+![Pareto](data/screenshot/pareto.png)
 
 #### Sazonalidade
-![Sazonalidade](img/sazonalidade.png)
+![Sazonalidade](data/screenshot/sazonalidade.png)
 
 #### Ticket médio
-![Ticket](img/ticket.png)
+![Ticket](data/screenshot/ticket.png)
 
-#### Ticket médio
-![Ticket](img/ticket.png)
 
 ---
 
