@@ -402,14 +402,9 @@ pncp_metabase     Up              0.0.0.0:3000->3000/tcp
 ### Rodando a validação GX
 
 ```bash
-# A validação usa os 3 meses mais recentes de data/raw/
+# A validação usa os 66 meses mais recentes de data/raw/
 python gx_validacao.py
 
-# Resultado esperado:
-# 15 expectations avaliadas
-# 13 passaram | 2 falharam
-# Taxa: 86,67%
-# Relatório: data/gx/gx_docs/index.html
 ```
 
 ---
